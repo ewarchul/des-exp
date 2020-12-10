@@ -133,22 +133,24 @@ des_ppmf <- function(par, fn, ..., lower, upper, control = list()) {
   cc          <- controlParam("ccum", mu / (mu + 2)) ## Evolution Path decay factor
   pathLength  <- controlParam("pathLength", 6) ## Size of evolution path
   cp          <- controlParam("cp", 1 / sqrt(N)) ## Evolution Path decay factor
-  maxiter     <- controlParam("maxit", floor(budget / (lambda + 1))) ## Maximum number of iterations after which algorithm stops
+  maxiter     <- controlParam("maxit", round(budget / (lambda + 1))) ## Maximum number of iterations after which algorithm stops
   c_Ft        <- controlParam("c_Ft", 0)
   pathRatio   <- controlParam("pathRatio", sqrt(pathLength)) ## Path Length Control reference value
   histSize    <- controlParam("history", ceiling(6 + ceiling(3 * sqrt(N)))) ## Size of the window of history - the step length history
   Ft_scale    <- controlParam("Ft_scale", ((mueff + 2) / (N + mueff + 3)) / (1 + 2 * max(0, sqrt((mueff - 1) / (N + 1)) - 1) + (mueff + 2) / (N + mueff + 3)))
   tol         <- controlParam("tol", 10^-12)
+  p_target    <- controlParam("p_target", 0.1)
+  d_param     <- controlParam("d_param", 2)
   counteval   <- 0 ## Number of function evaluations
   sqrt_N      <- sqrt(N)
 
   log.all <- controlParam("diag", FALSE)
-  log.Ft <- controlParam("diag.Ft", log.all)
+  log.Ft <- controlParam("diag.Ft", 1)
   log.value <- controlParam("diag.value", log.all)
   log.mean <- controlParam("diag.mean", log.all)
   log.meanCord <- controlParam("diag.meanCords", log.all)
-  log.pop <- controlParam("diag.pop", log.all)
-  log.bestVal <- controlParam("diag.bestVal", log.all)
+  log.pop <- controlParam("diag.pop", 1)
+  log.bestVal <- controlParam("diag.bestVal", 1)
   log.worstVal <- controlParam("diag.worstVal", log.all)
   log.eigen <- controlParam("diag.eigen", log.all)
 
@@ -156,7 +158,7 @@ des_ppmf <- function(par, fn, ..., lower, upper, control = list()) {
 
   ## nonLamarckian approach allows individuals to violate boundaries.
   ## Fitness value is estimeted by fitness of repaired individual.
-  Lamarckism <- controlParam("Lamarckism", FALSE)
+  Lamarckism <- controlParam("Lamarckism", TRUE)
 
   ## Fitness function wrapper
 
@@ -188,7 +190,7 @@ des_ppmf <- function(par, fn, ..., lower, upper, control = list()) {
     meanCords.log <- matrix(0, nrow = 0, ncol = N)
   }
   if (log.pop) {
-    pop.log <- array(0, c(N, lambda, maxiter))
+    pop.log <- array(0, c(N, lambda, maxiter*N))
   }
   if (log.bestVal) {
     bestVal.log <- matrix(0, nrow = 0, ncol = 1)
@@ -241,6 +243,9 @@ des_ppmf <- function(par, fn, ..., lower, upper, control = list()) {
     limit <- 0
     worst.fit <- max(fitness)
 
+    eval_mean = Inf
+    eval_meanOld = Inf
+
     # Store population and selection means
     popMean <- drop(population %*% weightsPop)
     muMean <- newMean
@@ -290,11 +295,7 @@ des_ppmf <- function(par, fn, ..., lower, upper, control = list()) {
       dMean[, histHead] <- (muMean - popMean) / Ft
 
       step <- (newMean - oldMean) / Ft
-
-      ## Update Ft
-      FtHistory[histHead] <- Ft
-      oldFt <- Ft
-
+ 
       ## Update parameters
       if (histHead == 1) {
         pc[, histHead] <- (1 - cp) * rep(0.0, N) / sqrt(N) + sqrt(mu * cp * (2 - cp)) * step
@@ -345,6 +346,18 @@ des_ppmf <- function(par, fn, ..., lower, upper, control = list()) {
       if (Lamarckism == FALSE) {
         fitnessNonLamarcian <- fn_d(population, populationRepaired, fitness)
       }
+
+      ## Update Ft
+      eval_meanOld = eval_mean
+      mean_point = apply(population, 1, mean) %>% t() %>% t()
+      eval_mean = apply(mean_point, 2, function(x) fn(x, ...))
+      counteval = counteval + 1 
+
+
+      p_succ = 
+        length(which(fitness < eval_meanOld))/lambda
+      Ft = 
+        Ft * exp(d_param * (p_succ - p_target) / (1 - p_target))
 
       ## Break if fit :
       wb <- which.min(fitness)
@@ -407,7 +420,7 @@ des_ppmf <- function(par, fn, ..., lower, upper, control = list()) {
     value = best.fit,
     counts = cnt,
     resets = restart.number,
-    label = stringr::str_glue("des_classic"),
+    label = stringr::str_glue("des-ppmf-pt-{round(p_target, 2)}-dp-{round(d_param, 2)}"),
     convergence = ifelse(iter >= maxiter, 1L, 0L),
     message = msg,
     diagnostic = log

@@ -140,7 +140,7 @@ des_msr <- function(par, fn, ..., lower, upper, control = list()) {
   cc          <- controlParam("ccum", mu / (mu + 2)) ## Evolution Path decay factor
   pathLength  <- controlParam("pathLength", 6) ## Size of evolution path
   cp          <- controlParam("cp", 1 / sqrt(N)) ## Evolution Path decay factor
-  maxiter     <- controlParam("maxit", floor(budget / (lambda + 1))) ## Maximum number of iterations after which algorithm stops
+  maxiter     <- controlParam("maxit", round(budget / (lambda + 1))) ## Maximum number of iterations after which algorithm stops
   c_Ft        <- controlParam("c_Ft", 0)
   pathRatio   <- controlParam("pathRatio", sqrt(pathLength)) ## Path Length Control reference value
   histSize    <- controlParam("history", ceiling(6 + ceiling(3 * sqrt(N)))) ## Size of the window of history - the step length history
@@ -161,7 +161,7 @@ des_msr <- function(par, fn, ..., lower, upper, control = list()) {
   log.value <- controlParam("diag.value", TRUE)
   log.mean <- controlParam("diag.mean", log.all)
   log.meanCord <- controlParam("diag.meanCords", log.all)
-  log.pop <- controlParam("diag.pop", FALSE)
+  log.pop <- controlParam("diag.pop", 1)
   log.bestVal <- controlParam("diag.bestVal", TRUE)
   log.worstVal <- controlParam("diag.worstVal", log.all)
   log.eigen <- controlParam("diag.eigen", log.all)
@@ -170,7 +170,7 @@ des_msr <- function(par, fn, ..., lower, upper, control = list()) {
 
   ## nonLamarckian approach allows individuals to violate boundaries.
   ## Fitness value is estimeted by fitness of repaired individual.
-  Lamarckism <- controlParam("Lamarckism", FALSE)
+  Lamarckism <- controlParam("Lamarckism", 1)
 
   ## Fitness function wrapper
 
@@ -202,7 +202,7 @@ des_msr <- function(par, fn, ..., lower, upper, control = list()) {
     meanCords.log <- matrix(0, nrow = 0, ncol = N)
   }
   if (log.pop) {
-    pop.log <- array(0, c(N, lambda, maxiter))
+    pop.log <- array(0, c(N, lambda, maxiter + 10))
   }
   if (log.bestVal) {
     bestVal.log <- matrix(0, nrow = 0, ncol = 1)
@@ -374,6 +374,7 @@ des_msr <- function(par, fn, ..., lower, upper, control = list()) {
       s = (1 - c_param) * s + c_param * z
       Ft = Ft * exp(s / d_param)
 
+
       ## Check worst fit:
       ww <- which.max(fitness)
       if (fitness[ww] > worst.fit) {
@@ -412,7 +413,7 @@ des_msr <- function(par, fn, ..., lower, upper, control = list()) {
   if (log.value) log$value <- value.log[1:iter, ]
   if (log.mean) log$mean <- mean.log[1:iter]
   if (log.meanCord) log$meanCord <- meanCords.log
-  if (log.pop) log$pop <- pop.log[, , 1:iter]
+  if (log.pop) log$pop <- pop.log[,,1:iter]
   if (log.bestVal) log$bestVal <- bestVal.log
   if (log.worstVal) log$worstVal <- worstVal.log
   if (log.eigen) log$eigen <- eigen.log

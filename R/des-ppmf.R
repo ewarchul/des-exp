@@ -149,7 +149,7 @@ des_ppmf <- function(par, fn, ..., lower, upper, control = list()) {
   log.value <- controlParam("diag.value", log.all)
   log.mean <- controlParam("diag.mean", log.all)
   log.meanCord <- controlParam("diag.meanCords", log.all)
-  log.pop <- controlParam("diag.pop", 1)
+  log.pop <- controlParam("diag.pop", 0)
   log.bestVal <- controlParam("diag.bestVal", 1)
   log.worstVal <- controlParam("diag.worstVal", log.all)
   log.eigen <- controlParam("diag.eigen", log.all)

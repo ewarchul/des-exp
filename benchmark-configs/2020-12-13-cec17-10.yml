@@ -36,7 +36,6 @@ ids:
   - "des-classic-nlam"
   - "des-ppmf-lam"
   - "des-ppmf-nlam"
-  - "ppmf-0.5-0.05"
 probnum: [1, 2, 3,
         4, 5, 6, 7, 8, 9, 10,
         11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -46,6 +45,6 @@ dims:
 cec: 17
 repnum: 51
 cpupc: 0.75
-source: "~/des-es-exp/R"
-dest: "~/des-es-exp/data/ppmf-benchmarks"
+source: "~/des-exp/R"
+dest: "~/des-exp/data/ppmf-benchmarks"
 save: 1
